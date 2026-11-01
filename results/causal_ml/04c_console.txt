@@ -1,0 +1,135 @@
+samples 550 | events 63 (11.5%)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 1 fold 1 (2.0 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 1 fold 2 (4.0 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 1 fold 3 (5.9 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 1 fold 4 (7.9 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 1 fold 5 (9.9 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 2 fold 1 (11.9 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 2 fold 2 (13.8 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 2 fold 3 (15.8 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 2 fold 4 (17.8 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 2 fold 5 (19.7 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 3 fold 1 (21.6 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 3 fold 2 (23.6 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 3 fold 3 (25.6 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 3 fold 4 (27.6 min)
+CV: 1 
+CV: 2 
+CV: 3 
+CV: 1 
+CV: 2 
+CV: 3 
+repeat 3 fold 5 (29.6 min)
+
+==== metrics (patient level, mean over repeats) ====
+         model AUROC AUROC_lo AUROC_hi PR_AUC  Brier mean_pred F1_topprev
+     enet_none 0.747    0.690    0.797  0.231 0.0980     0.112      0.205
+  enet_weights 0.763    0.708    0.816  0.257 0.1522     0.321      0.252
+ enet_oversamp 0.707    0.649    0.763  0.207 0.1222     0.134      0.252
+      gbm_none 0.708    0.641    0.769  0.208 0.0993     0.109      0.236
+   gbm_weights 0.733    0.672    0.788  0.204 0.1542     0.351      0.189
+ F1_youden_posthoc
+             0.340
+             0.337
+             0.308
+             0.333
+             0.332
+
+==== paired bootstrap vs enet_none ====
+         model        vs  dAUROC       lo       hi p_boot
+  enet_weights enet_none  0.0166  0.00754  0.02578  0.001
+ enet_oversamp enet_none -0.0402 -0.07805 -0.00289  0.032
+      gbm_none enet_none -0.0388 -0.07675 -0.00122  0.042
+   gbm_weights enet_none -0.0140 -0.05199  0.02181  0.443
+
+==== pre-split oversampling leak ====
+ rep AUROC_leaky AUROC_honest_enet_oversamp
+   1       0.987                      0.707
+   2       0.986                      0.707
+   3       0.987                      0.707
+
+prevalence 0.115, so a no-skill model has PR-AUC ~0.115 and F1 ~0.115 at the top-prevalence cut

@@ -1,0 +1,3 @@
+drug,n,responders,scan_days,fisher_p,r2_response_on_scan_day,residual_df
+IFX,23,8,8,0.0979451027448628,0.536805555555555,14
+VDZ,40,9,15,0.297635118244088,0.41457586618877,24

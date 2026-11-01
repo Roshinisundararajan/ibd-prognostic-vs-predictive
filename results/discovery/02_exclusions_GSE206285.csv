@@ -1,0 +1,4 @@
+step,n_before,n_excluded,n_after,reason
+non-randomised samples,568,18,550,diagnosis matches /healthy|control/
+outcome missing,550,0,550,clinical.remission.at.week.8 not Y/N
+arm unassignable,550,0,550,treatment field matched neither arm

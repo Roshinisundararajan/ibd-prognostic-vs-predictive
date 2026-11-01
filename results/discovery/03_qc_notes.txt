@@ -1,0 +1,6 @@
+median array-vs-cohort correlation: 0.952
+arrays with robust z < -3.5: 21  (GSM6249278 GSM6249311 GSM6249312 GSM6249321 GSM6249323 GSM6249326 GSM6249339 GSM6249446 GSM6249507 GSM6249513)
+PC1 variance explained: 34.8%   PC2: 13.2%
+PC1 ~ outcome: p = 1.43e-09
+PC2 ~ outcome: p = 0.649
+PC1 ~ arm (randomisation check, expect null): p = 0.925

@@ -1,0 +1,7 @@
+Series   : GSE206285
+Platform : GPL13158
+Samples  : 568
+Probes   : 54715
+
+Data processing, verbatim from GEO:
+The data was normalized by RMA using ArrayStudio version 10.
