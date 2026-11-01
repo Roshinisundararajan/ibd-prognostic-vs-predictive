@@ -2,7 +2,7 @@
 
 A single self-contained HTML page, no dependencies, no network calls. Open `index.html`
 in any browser, or view the hosted copy:
-https://claude.ai/artifact/WSm53g6uVM9v94yufBo4Lq
+Open `index.html` in any browser, or launch the interactive calculator here: [UC Week-8 Remission Estimator](https://roshinisundararajan.github.io/ibd-prognostic-vs-predictive/calculator/).
 
 ## What it implements
 
