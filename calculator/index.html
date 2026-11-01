@@ -1,0 +1,287 @@
+<title>UC Week-8 Remission Estimator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a bordered single sheet — CRF-style numbered entry fields at left, a rule-separated readout at right */
+:root {
+  --paper: #fcfcfd;
+  --sheet: #ffffff;
+  --ink: #15181c;
+  --ink-2: #5c646e;
+  --rule: #d4d8de;
+  --rule-strong: #9aa2ad;
+  --arm: #1b3a6b;       /* ustekinumab */
+  --ctrl: #8d959f;      /* placebo */
+  --flag: #8a4b00;
+  --flag-bg: #fdf4e7;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #101316; --sheet: #15191d; --ink: #e4e7ea; --ink-2: #99a2ac;
+    --rule: #2b3238; --rule-strong: #4e5862; --arm: #7fa8dd; --ctrl: #7e868f;
+    --flag: #e8b667; --flag-bg: #2a2114; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #101316; --sheet: #15191d; --ink: #e4e7ea; --ink-2: #99a2ac;
+  --rule: #2b3238; --rule-strong: #4e5862; --arm: #7fa8dd; --ctrl: #7e868f;
+  --flag: #e8b667; --flag-bg: #2a2114; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--sans);
+  font-size: 14px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 36px;
+}
+.sheet { max-width: 920px; margin: 0 auto; background: var(--sheet); border: 1px solid var(--rule-strong); }
+.lab { font: 600 10px/1.4 var(--sans); letter-spacing: 0.11em; text-transform: uppercase; color: var(--ink-2); }
+
+/* masthead */
+.mast { border-bottom: 2px solid var(--ink); padding: 18px 22px 12px; }
+.mast h1 { font: 600 clamp(1.05rem, 2.4vw, 1.3rem)/1.25 var(--sans); margin: 0 0 3px; letter-spacing: -0.01em; }
+.mast .sub { color: var(--ink-2); font-size: 0.86rem; }
+.meta { display: flex; flex-wrap: wrap; gap: 0 18px; border-top: 1px solid var(--rule); margin-top: 12px; padding-top: 8px;
+        font: 500 11px/1.6 var(--mono); color: var(--ink-2); }
+.meta b { color: var(--ink); font-weight: 500; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.cols > * { min-width: 0; }
+.left { border-right: 1px solid var(--rule); }
+@media (max-width: 720px) { .cols { grid-template-columns: minmax(0, 1fr); } .left { border-right: 0; border-bottom: 1px solid var(--rule); } }
+.secthead { padding: 10px 22px; border-bottom: 1px solid var(--rule); background: var(--paper); }
+
+/* entry fields */
+.fld { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 0 10px; padding: 16px 22px; border-bottom: 1px solid var(--rule); }
+.fld:last-child { border-bottom: 0; }
+.num { font: 500 12px/1.9 var(--mono); color: var(--ink-2); }
+.fld > div { min-width: 0; }
+.nm { font-weight: 600; font-size: 0.93rem; }
+.rng { font: 400 11px/1.6 var(--mono); color: var(--ink-2); margin-top: 3px; }
+.ctl { display: flex; align-items: center; gap: 12px; margin-top: 9px; flex-wrap: wrap; }
+input[type="range"] { flex: 1 1 150px; min-width: 110px; accent-color: var(--arm); height: 18px; }
+.read { font: 600 1.05rem var(--mono); font-variant-numeric: tabular-nums; min-width: 2ch; }
+input[type="number"] {
+  width: 110px; padding: 6px 8px; font: 500 0.92rem var(--mono); font-variant-numeric: tabular-nums;
+  border: 1px solid var(--rule-strong); border-radius: 0; background: var(--sheet); color: var(--ink);
+}
+input[type="number"]:disabled { color: var(--ink-2); background: var(--paper); }
+.unit { font: 400 11px var(--mono); color: var(--ink-2); }
+.toggle { display: inline-flex; border: 1px solid var(--rule-strong); }
+.toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle label { padding: 6px 15px; cursor: pointer; font-size: 0.86rem; font-weight: 500; }
+.toggle label + input + label { border-left: 1px solid var(--rule-strong); }
+.toggle input:checked + label { background: var(--arm); color: var(--sheet); }
+.tick { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--ink-2); cursor: pointer; }
+.tick input { accent-color: var(--arm); }
+input:focus-visible, .toggle input:focus-visible + label, .tick input:focus-visible { outline: 2px solid var(--arm); outline-offset: 1px; }
+
+/* readout */
+.out { padding: 16px 22px 18px; }
+.armrow { padding: 11px 0; border-bottom: 1px solid var(--rule); }
+.armrow:first-of-type { padding-top: 2px; }
+.armtop { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.armname { font: 600 11px var(--sans); letter-spacing: 0.08em; text-transform: uppercase; }
+.pval { font: 600 clamp(1.5rem, 4.5vw, 1.9rem)/1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.track { height: 7px; margin-top: 7px; border: 1px solid var(--rule); position: relative; }
+.track i { position: absolute; inset: 0 auto 0 0; display: block; transition: width .18s linear; }
+.drug .pval, .drug .armname { color: var(--arm); }
+.drug .track i { background: var(--arm); }
+.plac .pval, .plac .armname { color: var(--ctrl); }
+.plac .track i { background: var(--ctrl); }
+@media (prefers-reduced-motion: reduce) { .track i { transition: none; } }
+.axis { display: flex; justify-content: space-between; font: 400 10px var(--mono); color: var(--ink-2); margin-top: 5px; }
+.sum { display: grid; grid-template-columns: 1fr auto; gap: 4px 14px; margin-top: 13px; font-size: 0.86rem; }
+.sum dt { color: var(--ink-2); }
+.sum dd { margin: 0; font: 600 0.95rem var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.flag { margin-top: 13px; border-left: 3px solid var(--flag); background: var(--flag-bg); color: var(--flag);
+        padding: 7px 10px; font-size: 0.82rem; }
+.fine { margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--rule); color: var(--ink-2); font-size: 0.82rem; }
+
+/* notice + appendix */
+.notice { border-top: 1px solid var(--rule); padding: 12px 22px; font-size: 0.85rem; color: var(--ink-2); }
+.notice b { color: var(--ink); }
+details { border-top: 1px solid var(--rule); }
+summary { padding: 11px 22px; cursor: pointer; font-weight: 600; font-size: 0.88rem; }
+summary::marker { color: var(--ink-2); }
+.body { padding: 0 22px 18px; }
+.body p { margin: 0 0 11px; max-width: 66ch; }
+.eq { overflow-x: auto; font: 500 12px/1.8 var(--mono); border-left: 3px solid var(--rule-strong); padding: 8px 12px; color: var(--ink); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; font-size: 0.85rem; width: 100%; }
+th { text-align: left; font: 600 10px var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rule-strong); }
+td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rule); }
+td.n { font: 500 0.85rem var(--mono); font-variant-numeric: tabular-nums; text-align: right; padding-right: 18px; }
+th.n { text-align: right; padding-right: 18px; }
+footer { max-width: 920px; margin: 10px auto 0; color: var(--ink-2); font-size: 0.76rem; line-height: 1.6; }
+</style>
+
+<div class="sheet">
+  <div class="mast">
+    <h1>Ulcerative colitis &mdash; week-8 remission estimate</h1>
+    <div class="sub">Prognostic model. It estimates how likely remission is &mdash; not which biologic to give.</div>
+    <div class="meta">
+      <span>COHORT <b>GSE206285</b></span>
+      <span>TRIAL <b>UNIFI induction</b></span>
+      <span>ARMS <b>ustekinumab / placebo</b></span>
+      <span>N <b>550</b></span>
+      <span>EVENTS <b>63 (11.5%)</b></span>
+    </div>
+  </div>
+
+  <div class="cols">
+    <form class="left" id="f" autocomplete="off">
+      <div class="secthead"><span class="lab">Baseline assessment</span></div>
+
+      <div class="fld">
+        <span class="num">1</span>
+        <div>
+          <div class="nm">Total Mayo score</div>
+          <div class="rng">range 0&ndash;12 &middot; cohort 5&ndash;12, median 9</div>
+          <div class="ctl">
+            <input type="range" id="mayo" min="5" max="12" step="1" value="9" aria-label="Total Mayo score">
+            <span class="read" id="mayoV">9</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fld">
+        <span class="num">2</span>
+        <div>
+          <div class="nm" id="tnfLab">Prior anti-TNF exposure</div>
+          <div class="rng">51% of the cohort were biologic-experienced</div>
+          <div class="ctl">
+            <span class="toggle" role="radiogroup" aria-labelledby="tnfLab">
+              <input type="radio" name="tnf" id="tnf0" value="0" checked><label for="tnf0">Naive</label>
+              <input type="radio" name="tnf" id="tnf1" value="1"><label for="tnf1">Experienced</label>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fld">
+        <span class="num">3</span>
+        <div>
+          <div class="nm">Faecal calprotectin</div>
+          <div class="rng">cohort 35&ndash;18,800 &micro;g/g, median 1,310</div>
+          <div class="ctl">
+            <input type="number" id="calpro" min="0" step="10" value="1310" inputmode="numeric" aria-label="Faecal calprotectin">
+            <span class="unit">&micro;g/g</span>
+            <label class="tick"><input type="checkbox" id="calproNA"> not measured</label>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <section aria-live="polite">
+      <div class="secthead"><span class="lab">Estimated remission at week 8</span></div>
+      <div class="out">
+        <div class="armrow drug">
+          <div class="armtop"><span class="armname">Ustekinumab</span><span class="pval" id="pD">&ndash;</span></div>
+          <div class="track"><i id="bD"></i></div>
+        </div>
+        <div class="armrow plac">
+          <div class="armtop"><span class="armname">Placebo</span><span class="pval" id="pP">&ndash;</span></div>
+          <div class="track"><i id="bP"></i></div>
+          <div class="axis"><span>0%</span><span>25%</span><span>50%</span></div>
+        </div>
+
+        <dl class="sum">
+          <dt>Absolute difference</dt><dd id="dAbs">&ndash;</dd>
+          <dt>Number needed to treat</dt><dd id="dNNT">&ndash;</dd>
+        </dl>
+
+        <div class="flag" id="flag" hidden></div>
+
+        <p class="fine">The gap between arms is the trial's average drug effect (odds ratio 2.09) and is the same
+          proportion at every risk level. The model holds no term that varies the drug effect between patients,
+          because none was supported by the data.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="notice">
+    <b>Research use only.</b> Derived from one induction trial and not externally validated. In this cohort no
+    baseline marker &mdash; clinical or transcriptomic &mdash; identified patients who benefit more from ustekinumab
+    than from placebo, so these figures must not be used to choose between biologics.
+  </div>
+
+  <details>
+    <summary>Model specification and validation</summary>
+    <div class="body">
+      <p>Logistic regression fitted on all 550 patients, with uniform shrinkage (0.917) from 500 bootstrap
+        resamples and the intercept re-estimated afterwards. Predictors were fixed before fitting, to the number
+        63 events support under Riley's criteria (4&ndash;6 parameters).</p>
+
+      <div class="eq">logit(p) = 2.677 + 0.738&middot;ustekinumab &minus; 0.381&middot;Mayo &minus; 0.581&middot;antiTNF &minus; 0.177&middot;log2(calprotectin + 1)</div>
+
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Predictor</th><th class="n">OR</th><th>Interpretation</th></tr></thead>
+          <tbody>
+            <tr><td>Ustekinumab vs placebo</td><td class="n">2.09</td><td>roughly doubles the odds</td></tr>
+            <tr><td>Mayo score, per point</td><td class="n">0.68</td><td>32% lower odds per point</td></tr>
+            <tr><td>Prior anti-TNF exposure</td><td class="n">0.56</td><td>44% lower odds</td></tr>
+            <tr><td>Calprotectin, per doubling</td><td class="n">0.84</td><td>16% lower odds per doubling</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin-top:12px">Bootstrap optimism-corrected AUROC 0.72, calibration slope 0.92. Under 10 &times;
+        5-fold cross-validation with every step refitted inside the training fold, AUROC 0.72 and calibration
+        slope 0.89. A mucosal transcriptome score raised discrimination to 0.75 but cannot be computed for a new
+        patient without projecting their biopsy onto the discovery cohort's PCA basis, so it is excluded here.</p>
+    </div>
+  </details>
+</div>
+
+<footer>
+  AI in Medicine project, IIT Madras &middot; discovery cohort GSE206285 (UNIFI induction, ustekinumab vs placebo).
+  Applies to patients resembling those enrolled: moderate-to-severe UC starting induction.
+</footer>
+
+<script>
+(function () {
+  var B0 = 2.676693388, B_ARM = 0.737565746, B_MAYO = -0.380561278,
+      B_TNF = -0.581145747, B_CAL = -0.176937065, CAL_MED = 1310;
+  function $(id) { return document.getElementById(id); }
+  function inv(z) { return 1 / (1 + Math.exp(-z)); }
+  function pct(p) { return (100 * p).toFixed(1) + "%"; }
+
+  function update() {
+    var mayo = +$("mayo").value;
+    $("mayoV").textContent = mayo;
+    var tnf = $("tnf1").checked ? 1 : 0;
+    var na = $("calproNA").checked;
+    $("calpro").disabled = na;
+
+    var raw = parseFloat($("calpro").value), notes = [];
+    if (na) { raw = CAL_MED; notes.push("Calprotectin not measured: the cohort median (1,310 µg/g) is substituted, as it was during model fitting."); }
+    else if (!isFinite(raw) || raw < 0) { raw = CAL_MED; notes.push("Enter a calprotectin value of 0 or more. The cohort median is used until then."); }
+    else if (raw < 35 || raw > 18800) { notes.push("Outside the cohort's observed range (35–18,800 µg/g). This is extrapolation — treat the estimate with extra caution."); }
+
+    var lp = B0 + B_MAYO * mayo + B_TNF * tnf + B_CAL * Math.log2(raw + 1);
+    var pd = inv(lp + B_ARM), pp = inv(lp), diff = pd - pp;
+
+    $("pD").textContent = pct(pd);
+    $("pP").textContent = pct(pp);
+    $("bD").style.width = Math.min(100, pd / 0.5 * 100) + "%";
+    $("bP").style.width = Math.min(100, pp / 0.5 * 100) + "%";
+    $("dAbs").textContent = "+" + (100 * diff).toFixed(1) + " pts";
+    $("dNNT").textContent = diff > 0 ? Math.round(1 / diff) : "–";
+
+    $("flag").hidden = !notes.length;
+    $("flag").textContent = notes.join(" ");
+  }
+
+  ["mayo", "calpro", "calproNA", "tnf0", "tnf1"].forEach(function (id) {
+    $(id).addEventListener("input", update);
+    $(id).addEventListener("change", update);
+  });
+  $("f").addEventListener("submit", function (e) { e.preventDefault(); });
+  update();
+})();
+</script>
