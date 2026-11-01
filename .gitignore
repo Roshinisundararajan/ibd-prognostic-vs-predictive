@@ -1,0 +1,17 @@
+# Raw and derived data: regenerate with analysis/01 and analysis/02
+analysis/out/
+analysis/data/GSE*/*
+!analysis/data/GSE*/*metadata*
+*.rds
+*.soft.gz
+*_series_matrix.txt.gz
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# OS
+.DS_Store
+Thumbs.db
